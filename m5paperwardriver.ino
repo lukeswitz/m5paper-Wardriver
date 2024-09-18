@@ -175,32 +175,38 @@ void displayDevices() {
   int y = 40;
   int start = startIndex;
 
-  // Show the end of the list for 3 seconds when a new device is added
+  // Logic to show the last page briefly (once for 1 second every 10 seconds)
   unsigned long currentMillis = millis();
-  if (currentMillis % 10000 < 3000) {  // Show last page for 3 seconds every 10 seconds
-    start = max(0, deviceIndex - devicesPerPage);  // Start at the end of the list
+  static unsigned long lastPageShownMillis = 0;
+  bool showLastPage = false;
+  if (currentMillis - lastPageShownMillis >= 10000) {
+    if (currentMillis % 10000 < 1000) {  // Show last page for 1 second
+      start = max(0, deviceIndex - devicesPerPage);  // Start at the end of the list
+      showLastPage = true;
+      lastPageShownMillis = currentMillis;  // Update the timestamp for last page display
+    }
   }
-  
+
+  // Display the devices
   for (int i = start; i < start + devicesPerPage && i < deviceIndex; i++) {
     String macStr = String(deviceList[i].mac);
     
-    // Optional mac highlighting
-    if (macStr.startsWith("00:11:22")) {
+    // Mac highlighter
+    if (strcasecmp(macStr.c_str(), "00:11:22") == 0) {
+      Serial.println(macStr);
       canvas.setTextSize(3);  // Make the text bigger for this MAC
     } else {
       canvas.setTextSize(2);  // Default size for other devices
     }
 
-    // Display the full device info
     String deviceInfo = String(i + 1) + ": " + String(deviceList[i].info);
     canvas.drawString(deviceInfo, 10, y);
     y += 30;
   }
 
   canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);  // Push the full screen update
-  needDisplayUpdate = false;  // Reset the update flag
+  needDisplayUpdate = false;
 }
-
 
 // Handle buttons
 void scrollDevices(bool forward) {
@@ -244,7 +250,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
 // WiFi scan handler
 void handleWiFiScan() {
-  int n = WiFi.scanNetworks();
+  int n = WiFi.scanNetworks(false,true,false,110); // show hidden networks, 110ms/chan
 
   if (n > 0) {
     GPSData gpsData = getGPSData();
@@ -258,6 +264,10 @@ void handleWiFiScan() {
       const char* ssid = ssidStr.c_str();
       const char* bssid = bssidStr.c_str();
       const char* encryption = encryptionStr.c_str();
+
+      if (ssidStr == "") {
+        ssidStr = "HIDDEN";  // Label hidden networks
+      }
 
       if (isDuplicate(bssid)) {
         continue;
@@ -349,8 +359,6 @@ void loop() {
     pBLEScan->start(scanTime, false);  // Start BLE scan
     pBLEScan->clearResults();          // Clear BLE scan results after logging
   }
-
-  delay(150); // scan delay
 }
 
 const char* getAuthType(uint8_t wifiAuth) {
