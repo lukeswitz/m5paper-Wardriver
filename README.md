@@ -25,8 +25,8 @@ Some of the libraries are bundled with the ESP32 board package and don't require
 4. **ESP32 BLE Arduino** - For BLE functionality
    
 ### External Libraries (Needs to be installed)
-1. **M5EPD** - For M5Paper functionality. Install from [M5EPD GitHub repository](https://github.com/m5stack/M5EPD).
-2. **TinyGPS++** - For handling GPS data (Install via the Arduino Library Manager).
+1. **M5EPD** - For M5Paper functionality 
+2. **TinyGPS++** - For handling GPS data
 
 ### Installing Libraries
 1. For **TinyGPS++**: Open **Arduino IDE**, go to **Sketch** > **Include Library** > **Manage Libraries**, search for **TinyGPS++**, and click **Install**.
