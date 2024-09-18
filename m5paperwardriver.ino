@@ -292,9 +292,6 @@ void setup() {
   canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
   delay(2000);
 
-  canvas.createCanvas(540, 960);
-  canvas.setTextSize(2);
-
   // Calculate devices per page based on canvas height and text spacing
   devicesPerPage = (canvas.height() - 60) / 30;  // Adjust 60 and 30 if needed
 
