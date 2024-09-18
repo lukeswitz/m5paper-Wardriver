@@ -4,53 +4,61 @@ This project scans for WiFi and BLE devices using the M5Paper, logs the data to 
 
 ## Prerequisites
 
-Before starting, make sure you have the following installed in your Arduino IDE:
+Before starting, ensure you have the following components and software set up:
 
 1. **M5Paper Unit**
 2. **M5 GPS i2c Unit & Cable**
-3. **SD Card**
+3. **SD Card** (formatted and ready for use)
 4. **Arduino IDE** (latest version)
-5. **ESP32 Board Package** - Add via the Boards Manager:
-   - Go to `Tools` > `Board` > `Boards Manager` and search for `ESP32`.
-   - Install **ESP32 by Espressif Systems**.
+5. **ESP32 Board Package** - Installed via the **Boards Manager**:
+   - Open Arduino IDE and go to **File** > **Preferences**.
+   - In the "Additional Board Manager URLs" field, add:  
+     `https://dl.espressif.com/dl/package_esp32_index.json`.
+   - Go to the **Sidebar** > **Boards Manager**, search for `ESP32`, and click **Install** next to **ESP32 by Espressif Systems**.
 
 ## Libraries Needed
 
-Some of the libraries are bundled with the ESP32 board package and don't require manual installation, while a few need to be installed from the Library Manager.
+The ESP32 board package includes some essential libraries, while others must be manually installed through the **Library Manager**.
 
-### Bundled Libraries (Included with the ESP32 Core)
-1. **WiFi** - For scanning and connecting to WiFi networks
-2. **SD** - For handling SD card operations
-3. **SPI** - For SPI communication
-4. **ESP32 BLE Arduino** - For BLE functionality
-   
-### External Libraries (Needs to be installed)
-1. **M5EPD** - For M5Paper functionality 
-2. **TinyGPS++** - For handling GPS data
+### Bundled Libraries (Included with ESP32 Core)
+1. **WiFi** - For scanning and connecting to WiFi networks.
+2. **SD** - For handling SD card operations.
+3. **SPI** - For SPI communication.
+4. **ESP32 BLE Arduino** - For Bluetooth Low Energy (BLE) functionality.
 
-### Installing Libraries
-1. For **TinyGPS++**: Open **Arduino IDE**, go to **Sketch** > **Include Library** > **Manage Libraries**, search for **TinyGPS++**, and click **Install**.
-2. For **M5EPD**: Open **Arduino IDE**, go to **Sketch** > **Include Library** > **Manage Libraries**, search for **M5EPD**, and click **Install**.
+### External Libraries (Requires Installation)
+1. **M5EPD** - For M5Paper-specific functionality.
+2. **TinyGPS++** - For handling GPS data.
 
+### Installing External Libraries
+1. For **TinyGPS++**:
+   - In Arduino IDE, open the **Library Manager** via the **Sidebar** or **Sketch** > **Include Library** > **Manage Libraries**.
+   - Search for **TinyGPS++** and click **Install**.
+2. For **M5EPD**:
+   - Similarly, search for **M5EPD** in the **Library Manager** and click **Install**.
 
 ## Board Setup
 
-1. In the **Arduino IDE**, go to **Tools** > **Board** and select **M5Paper**.
-2. Make sure the correct port is selected under **Tools** > **Port**.
+1. In **Arduino IDE**, go to **Tools** > **Board** and select **M5Paper** from the ESP32 list.
+2. Ensure the correct port is selected under **Tools** > **Port** (e.g., COM3 on Windows or /dev/cu.SLAB_USBtoUART on macOS).
 
 ## Project Setup
 
-### Step 1: Clone or download the `.ino` file
+### Step 1: Clone or Download the `.ino` File
 
-Download or clone this repository and open the `.ino` file in the Arduino IDE.
+Download or clone the required code repository. Open the `.ino` file in Arduino IDE to prepare for uploading.
 
 ### Step 2: Initialize SD Card
 
-The SD card is used to log data about detected WiFi and BLE devices along with GPS data. Ensure you have an SD card formatted and ready to use.
+The SD card will be used to log detected WiFi networks, BLE devices, and GPS data. Make sure the card is formatted and ready for use in the M5Paper.
 
 ### Step 3: Upload Code
 
-After configuring your board and libraries, upload the code to your M5Paper by clicking the **Upload** button in the Arduino IDE.
+After verifying that your board, port, and libraries are properly configured, click the **Upload** button in Arduino IDE to flash the code onto your M5Paper.
+
+Once uploaded, your M5Paper will start logging WiFi, BLE, and GPS data to the SD card.
+
+
 
 ### Step 4: View Output
 
