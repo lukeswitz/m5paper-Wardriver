@@ -1,6 +1,6 @@
 # M5Paper Wardriver
 
-This project scans for WiFi and BLE devices using the M5Paper, logs the data to an SD card, and displays it on the M5Paper's e-paper screen. It also integrates GPS and logs all seen devices to a wigle.net compatible CSV file. 
+This project scans for WiFi and BLE devices using the M5Paper, logs the data to an SD card (wigle.net compatible CSV), and displays it on the M5Paper's screen.
 
 ## Prerequisites
 
