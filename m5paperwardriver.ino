@@ -11,8 +11,8 @@
 M5EPD_Canvas canvas(&M5.EPD);
 #define SD_CS_PIN 4
 
-const String BUILD = "1.0.1";
-const String VERSION = "1.0";
+const String BUILD = "1.1.0";
+const String VERSION = "1.1";
 
 HardwareSerial GPS_Serial(1);
 TinyGPSPlus gps;
