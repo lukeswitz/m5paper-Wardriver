@@ -27,6 +27,8 @@ struct GPSData {
 
 BLEScan* pBLEScan;
 int scanTime = 5;
+int mNumWifi = 0;
+int mNumBLE = 0;
 
 File logFile;
 String logFileName = "/M5Paper-Wireless-Scan-.csv";
@@ -130,9 +132,11 @@ void addDeviceAtIndex(int index, const char* type, const char* ssid, const char*
   strncpy(deviceList[index].mac, mac, sizeof(deviceList[index].mac));
   deviceList[index].rssi = rssi;
   if (strcmp(type, "WiFi") == 0) {
+    mNumWifi++;
     snprintf(deviceList[index].info, sizeof(deviceList[index].info),
              "WiFi: %s [%d] (%s) %d dBm", ssid, channel, encryption, rssi);
   } else {
+    mNumBLE++;
     snprintf(deviceList[index].info, sizeof(deviceList[index].info),
              "BLE: %s (%s) %d dBm", ssid, mac, rssi);
   }
@@ -155,6 +159,7 @@ void addOrUpdateDevice(const char* type, const char* ssid, const char* mac, int 
 }
 
 // Display
+
 void displayDevices() {
   // Sort devices based on RSSI (highest to lowest)
   for (int i = 0; i < deviceIndex - 1; i++) {
@@ -167,10 +172,13 @@ void displayDevices() {
     }
   }
 
+  String gpsValid = gps.location.isValid() ? "Valid" : "Invalid";  // gps status for top text
+
   canvas.createCanvas(540, 960);  // Full vertical canvas size
   canvas.fillCanvas(0);
   canvas.setTextSize(2);  // Default text size
-  canvas.drawString("Discovered Devices (sorted by RSSI):", 10, 10);
+  canvas.drawString("GPS: " + gpsValid + " | HDOP: " + String(gps.hdop.value()) + " | WiFi:" + String(mNumWifi) + " | BLE:" + String(mNumBLE), 10, 10);
+  canvas.drawLine(10, 30, 540, 30, 15);
 
   int y = 40;
   int start = startIndex;
@@ -180,7 +188,7 @@ void displayDevices() {
   static unsigned long lastPageShownMillis = 0;
   bool showLastPage = false;
   if (currentMillis - lastPageShownMillis >= 10000) {
-    if (currentMillis % 10000 < 1000) {  // Show last page for 1 second
+    if (currentMillis % 10000 < 1000) {              // Show last page for 1 second
       start = max(0, deviceIndex - devicesPerPage);  // Start at the end of the list
       showLastPage = true;
       lastPageShownMillis = currentMillis;  // Update the timestamp for last page display
@@ -190,11 +198,10 @@ void displayDevices() {
   // Display the devices
   for (int i = start; i < start + devicesPerPage && i < deviceIndex; i++) {
     String macStr = String(deviceList[i].mac);
-    
-    // Mac highlighter
+
     if (strcasecmp(macStr.c_str(), "00:11:22") == 0) {
       Serial.println(macStr);
-      canvas.setTextSize(3);  // Make the text bigger for this MAC
+      canvas.setTextSize(4);  // Make the text bigger for this MAC
     } else {
       canvas.setTextSize(2);  // Default size for other devices
     }
@@ -206,7 +213,9 @@ void displayDevices() {
 
   canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);  // Push the full screen update
   needDisplayUpdate = false;
+  checkButtons();
 }
+
 
 // Handle buttons
 void scrollDevices(bool forward) {
@@ -225,7 +234,7 @@ void scrollDevices(bool forward) {
   }
 }
 
-// pragma mark Scan Loop
+// pragma mark Scans
 
 // Scan BLE
 class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
@@ -250,7 +259,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
 // WiFi scan handler
 void handleWiFiScan() {
-  int n = WiFi.scanNetworks(false,true,false,110); // show hidden networks, 110ms/chan
+  int n = WiFi.scanNetworks(false, true, false, 110);  // show hidden networks, 110ms/chan
 
   if (n > 0) {
     GPSData gpsData = getGPSData();
@@ -319,11 +328,7 @@ void setup() {
   initializeScanning();
 }
 
-// Main loop
-unsigned long previousMillis = 0;
-const unsigned long interval = 2000;  // 2 seconds
-
-void loop() {
+void checkButtons() {
   M5.update();
   if (M5.BtnL.isPressed()) {
     Serial.println("BTN L Pressed");
@@ -335,7 +340,15 @@ void loop() {
     scrollDevices(true);  // Scroll down
   }
 
-  delay(20);
+  delay(5);  // debounce
+}
+
+// Main loop
+unsigned long previousMillis = 0;
+const unsigned long interval = 2000;  // 2 seconds
+
+void loop() {
+  checkButtons();
 
   if (needDisplayUpdate) {
     displayDevices();
