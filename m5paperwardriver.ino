@@ -47,7 +47,6 @@ int devicesPerPage = 0;  // Number of devices that fit on one screen
 
 volatile bool needDisplayUpdate = false;
 
-// Helper to get GPS data
 GPSData getGPSData() {
   GPSData gpsData;
   char utc[21];
@@ -60,7 +59,8 @@ GPSData getGPSData() {
   return gpsData;
 }
 
-// Write CSV header
+
+// Filesys
 void writeCSVHeader() {
   if (logFile) {
     logFile.println("WigleWifi-1.4,appRelease=" + BUILD + ",model=M5Paper,release=" + VERSION + ",device=M5Paper,display=ePaper,board=ESP32,brand=M5");
@@ -69,7 +69,6 @@ void writeCSVHeader() {
   }
 }
 
-// Initialize SD card
 bool initSDCard() {
   if (!SD.begin(SD_CS_PIN)) {
     Serial.println("SD Card initialization failed!");
@@ -84,7 +83,6 @@ bool initSDCard() {
   return true;
 }
 
-// Log device data to CSV
 void logToCSV(const char* netid, const char* ssid, const char* authType, const char* time, int channel, int signal, double lat, double lon, double altitude, double accuracy, const char* type) {
   if (logFile) {
     logFile.printf("%s,\"%s\",%s,%s,%d,%d,%.6f,%.6f,%.2f,%.2f,%s\n",
@@ -93,7 +91,6 @@ void logToCSV(const char* netid, const char* ssid, const char* authType, const c
   }
 }
 
-// Check if device with the same MAC address already exists
 bool isDuplicate(const char* mac) {
   for (int i = 0; i < deviceIndex; i++) {
     if (strcmp(deviceList[i].mac, mac) == 0) {
@@ -103,7 +100,6 @@ bool isDuplicate(const char* mac) {
   return false;
 }
 
-// Function to find the index of the device with the lowest RSSI
 int findLowestRSSIIndex() {
   int minIndex = 0;
   int minRSSI = deviceList[0].rssi;
@@ -128,7 +124,6 @@ void removeDevice(int index) {
   deviceIndex--;
 }
 
-// Function to add a device at a specific index
 void addDeviceAtIndex(int index, const char* type, const char* ssid, const char* mac, int rssi, int channel = 0, const char* encryption = "") {
   strncpy(deviceList[index].type, type, sizeof(deviceList[index].type));
   strncpy(deviceList[index].ssid, ssid, sizeof(deviceList[index].ssid));
@@ -143,7 +138,6 @@ void addDeviceAtIndex(int index, const char* type, const char* ssid, const char*
   }
 }
 
-// Function to add or update a device
 void addOrUpdateDevice(const char* type, const char* ssid, const char* mac, int rssi, int channel = 0, const char* encryption = "") {
   if (deviceIndex < 150) {
     // There is space in the list, add the new device
@@ -153,7 +147,6 @@ void addOrUpdateDevice(const char* type, const char* ssid, const char* mac, int 
     // The list is full, find the device with the lowest RSSI
     int minIndex = findLowestRSSIIndex();
     if (rssi > deviceList[minIndex].rssi) {
-      // Replace the device with the lowest RSSI
       removeDevice(minIndex);
       addDeviceAtIndex(minIndex, type, ssid, mac, rssi, channel, encryption);
     }
@@ -161,7 +154,9 @@ void addOrUpdateDevice(const char* type, const char* ssid, const char* mac, int 
   needDisplayUpdate = true;  // Set flag to update display
 }
 
+// Display
 void displayDevices() {
+  // Sort devices based on RSSI (highest to lowest)
   for (int i = 0; i < deviceIndex - 1; i++) {
     for (int j = i + 1; j < deviceIndex; j++) {
       if (deviceList[i].rssi < deviceList[j].rssi) {
@@ -172,26 +167,42 @@ void displayDevices() {
     }
   }
 
-  canvas.createCanvas(540, 960);  // Correct full vertical canvas size
+  canvas.createCanvas(540, 960);  // Full vertical canvas size
   canvas.fillCanvas(0);
-  canvas.setTextSize(2);
+  canvas.setTextSize(2);  // Default text size
   canvas.drawString("Discovered Devices (sorted by RSSI):", 10, 10);
 
   int y = 40;
-  for (int i = 0; i < deviceIndex; i++) {
-    canvas.drawString(String(i+1) + ": " + deviceList[i].info, 10, y);
-    y += 30;
-    if (y > canvas.height() - 20) {
-      canvas.pushCanvas(0, 0, UPDATE_MODE_DU4);
-      delay(2000);
-      canvas.fillCanvas(0);
-      y = 40;
+  int start = startIndex;
+
+  // Show the end of the list for 3 seconds when a new device is added
+  unsigned long currentMillis = millis();
+  if (currentMillis % 10000 < 3000) {  // Show last page for 3 seconds every 10 seconds
+    start = max(0, deviceIndex - devicesPerPage);  // Start at the end of the list
+  }
+  
+  for (int i = start; i < start + devicesPerPage && i < deviceIndex; i++) {
+    String macStr = String(deviceList[i].mac);
+    
+    // Optional mac highlighting
+    if (macStr.startsWith("00:11:22")) {
+      canvas.setTextSize(3);  // Make the text bigger for this MAC
+    } else {
+      canvas.setTextSize(2);  // Default size for other devices
     }
+
+    // Display the full device info
+    String deviceInfo = String(i + 1) + ": " + String(deviceList[i].info);
+    canvas.drawString(deviceInfo, 10, y);
+    y += 30;
   }
 
-  canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);
+  canvas.pushCanvas(0, 0, UPDATE_MODE_GC16);  // Push the full screen update
+  needDisplayUpdate = false;  // Reset the update flag
 }
 
+
+// Handle buttons
 void scrollDevices(bool forward) {
   if (forward) {
     if (startIndex + devicesPerPage < deviceIndex) {
@@ -208,8 +219,9 @@ void scrollDevices(bool forward) {
   }
 }
 
+// pragma mark Scan Loop
 
-// BLE callback to handle results
+// Scan BLE
 class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
   void onResult(BLEAdvertisedDevice advertisedDevice) {
     String macStr = advertisedDevice.getAddress().toString().c_str();
@@ -220,7 +232,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
     const char* ssid = ssidStr.c_str();
 
     if (isDuplicate(mac)) {
-      return;  // Skip duplicate devices
+      return;
     }
 
     GPSData gpsData = getGPSData();
@@ -248,7 +260,7 @@ void handleWiFiScan() {
       const char* encryption = encryptionStr.c_str();
 
       if (isDuplicate(bssid)) {
-        continue;  // Skip duplicates
+        continue;
       }
 
       logToCSV(bssid, ssid, encryption, gpsData.time.c_str(), channel, rssi, gpsData.latitude, gpsData.longitude, gpsData.altitude, gpsData.accuracy, "WiFi");
@@ -272,7 +284,6 @@ void initializeScanning() {
   pBLEScan->setActiveScan(true);
 }
 
-// Setup function
 void setup() {
   Serial.begin(115200);  // Initialize serial communication for debugging
 
@@ -303,15 +314,22 @@ unsigned long previousMillis = 0;
 const unsigned long interval = 2000;  // 2 seconds
 
 void loop() {
-  // Update button states
   M5.update();
-
-  if (M5.BtnL.wasPressed()) {
+  if (M5.BtnL.isPressed()) {
+    Serial.println("BTN L Pressed");
     scrollDevices(false);  // Scroll up
   }
 
-  if (M5.BtnR.wasPressed()) {
+  if (M5.BtnR.isPressed()) {
+    Serial.println("BTN R Pressed");
     scrollDevices(true);  // Scroll down
+  }
+
+  delay(20);
+
+  if (needDisplayUpdate) {
+    displayDevices();
+    needDisplayUpdate = false;
   }
 
   while (GPS_Serial.available() > 0) {
@@ -326,19 +344,13 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
-
+    displayDevices();
     handleWiFiScan();
     pBLEScan->start(scanTime, false);  // Start BLE scan
     pBLEScan->clearResults();          // Clear BLE scan results after logging
   }
 
-  if (needDisplayUpdate) {
-    displayDevices();
-    needDisplayUpdate = false;
-  }
-
-  // Allow background tasks to run
-  delay(1);
+  delay(150); // scan delay
 }
 
 const char* getAuthType(uint8_t wifiAuth) {
