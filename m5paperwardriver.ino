@@ -174,9 +174,9 @@ void displayDevices() {
 
   String gpsValid = gps.location.isValid() ? "Valid" : "Invalid";  // gps status for top text
 
-  canvas.createCanvas(540, 960);  // Full vertical canvas size
+  canvas.createCanvas(540, 960);
   canvas.fillCanvas(0);
-  canvas.setTextSize(2);  // Default text size
+  canvas.setTextSize(2);
   canvas.drawString("GPS: " + gpsValid + " | HDOP: " + String(gps.hdop.value()) + " | WiFi:" + String(mNumWifi) + " | BLE:" + String(mNumBLE), 10, 10);
   canvas.drawLine(10, 30, 540, 30, 15);
 
@@ -188,7 +188,7 @@ void displayDevices() {
   static unsigned long lastPageShownMillis = 0;
   bool showLastPage = false;
   if (currentMillis - lastPageShownMillis >= 10000) {
-    if (currentMillis % 10000 < 1000) {              // Show last page for 1 second
+    if (currentMillis % 10000 < 1500) {              // Show last page for 1.5 seconds
       start = max(0, deviceIndex - devicesPerPage);  // Start at the end of the list
       showLastPage = true;
       lastPageShownMillis = currentMillis;  // Update the timestamp for last page display
@@ -259,7 +259,7 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
 // WiFi scan handler
 void handleWiFiScan() {
-  int n = WiFi.scanNetworks(false, true, false, 110);  // show hidden networks, 110ms/chan
+  int n = WiFi.scanNetworks(false, true, false, 200);  // show hidden networks, 200ms/chan Nyquist sampling rate
 
   if (n > 0) {
     GPSData gpsData = getGPSData();
@@ -339,7 +339,6 @@ void checkButtons() {
     Serial.println("BTN R Pressed");
     scrollDevices(true);  // Scroll down
   }
-
   delay(5);  // debounce
 }
 
